@@ -1,0 +1,114 @@
+#include "protheus.ch"
+#include "TOTVS.CH"
+#include "rwmake.ch"
+#include "topconn.ch"
+#include "TBICONN.ch"
+
+/*/{Protheus.doc} consUSD
+Função realiza a consulta da cotação do dólar na API do BACEN
+será feita uma requisição GET para a API do BACEN com a data de consulta com até 5 tentativas de dias anteriores
+pois o bacen não retorna a cotação caso não haja cotação para o dia.
+@type function
+@version  1.0
+@author felipe.moreira
+@since 06/04/2024
+@param dDataConsulta, date, data para consulta da cotação
+@return numeric, valor da cotação do dólar
+/*/
+User Function consUSD(dDataConsulta as date) as numeric
+    Local nValor          := 0                                                                                                                                                as numeric
+    Local cUrl            := "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarPeriodo(dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)" as character
+    Local cPath           := ""
+    Local aHeadOut        := {}                                                                                                                                               as array
+    local oRestClient                                                                                                                                                         as object
+    local oRet
+    local oRetorno
+    Local lContinua       := .T.                                                                                                                                              as logical
+    Local nQuantidadeDias := 0                                                                                                                                                as numeric
+
+    //Laço para garantir que sejam testados varios dias até encontrar a cotação, pois a API do BACEN não retorna caso o não haja cotação para o dia.
+    while lContinua
+
+        //Se passar de 5 dias sem encontrar a cotação, retorna 0 e avisa o usuário que não foi possível obter a cotação
+        IF nQuantidadeDias > 5
+            MSGSTOP( 'Atenção','Não foi possível obter a cotação do dólar')
+            Return nValor := 0
+        EndIF
+
+        //Trata a data para o formato que a API do BACEN aceita
+        //busca data de e data até.
+        cDataInicial := trataDataParaConsulta(dDataConsulta - nQuantidadeDias)
+        cDataFinal   := trataDataParaConsulta(dDataConsulta)
+        cPath := "?@dataInicial='"+cDataInicial+"'&@dataFinalCotacao='"+cDataFinal+"'&$format=json"
+
+        oRestClient := FWRest():New(cUrl)
+        oRestClient:setPath(cPath)
+
+        //Adiciona o cabeçalho da requisição
+        aadd(aHeadOut,'Content-Type: application/json')
+
+        //Define o timeout da requisição 120 segundos evitar
+        oRestClient:nTimeOut := 120
+
+        //Faz a requisição GET
+        lRet := oRestClient:GET(aHeadOut)
+        cRetorno := oRestClient:GetResult()
+        oRet := oRestClient:ORESPONSEH
+
+        //Recupera o retorno da API
+        oRetorno :=  JsonObject():New()
+        ret := oRetorno:FromJson(cRetorno)
+
+        //Se o retorno for um objeto e tiver a propriedade value, pega o valor da cotação
+        If ValType(oRetorno) == 'J'
+            If ValType(oRetorno["value"]) == 'A' .AND. len(oRetorno["value"]) > 0
+                nValor := oRetorno["value"][1]['cotacaoCompra']
+                lContinua := .F.
+            EndIf
+        EndIF
+
+        //se chegou até aqui é porque não encontrou a cotação, então incrementa o contador que será utilizado para diminuir da data de.
+        nQuantidadeDias := nQuantidadeDias+1
+    EndDo
+Return nValor
+
+/*/{Protheus.doc} trataDataParaConsulta
+função realiza o tratamento da data padrão do protheus para o formato
+aceito na requisição da API do BACEN para consulta da cotação do dólar.
+data aceita : MM-DD-YYYY
+@type function
+@version 1.0
+@author felipe.moreira
+@since 6/4/2024
+@param dDataConsulta, date, data a ser tratada
+@return character, data tratada
+/*/
+Static Function trataDataParaConsulta(dDataConsulta as date) as character
+    Local cDia         := Substr(DtoS(dDataConsulta),7,2) as character
+    Local cMes         := Substr(DtoS(dDataConsulta),5,2) as character
+    Local cAno         := Substr(DtoS(dDataConsulta),1,4) as character
+    Local cDataTratada := cMes + "-" + cDia + "-" + cAno  as character
+
+Return cDataTratada
+
+/*/{Protheus.doc} testaFuncaoconsUSD
+Função para testar a função consUSD que realiza a consulta da cotação do dólar na API do BACEN
+@type function
+@version  1.0
+@author felipe.moreira
+@since 4/6/2024
+@return numeric, valor da cotação do dólar
+/*/
+User Function testaFuncaoConsUSD(dDataConsulta as date) as numeric
+
+    RPCSetType(3)
+    PREPARE ENVIRONMENT EMPRESA "99" FILIAL "01"
+
+    Default dDataConsulta := dDatabase
+
+    nValor := U_consUSD(dDataConsulta)
+
+    MsgInfo('Valor do Dolar para a data passada é: '+ str(nValor),"Resultado Teste Função consUSD")
+
+    RESET ENVIRONMENT
+Return nValor
