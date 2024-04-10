@@ -9,7 +9,7 @@
 Static cTitulo := 'Cadastro De Contratos Duofy'
 
 /*/{Protheus.doc} CTR001
-Cadastro de Contratos Duofy 
+Cadastro de Contratos Duofy
 @type function
 @version 1.0
 @author Felipe Moreira
@@ -293,7 +293,7 @@ Return(xRet)
 Função que realizar a efetivação do contrato, incluindo os respectivos
 titulos no contas a receber.
 @type function
-@version 1.0 
+@version 1.0
 @author felipe.moreira
 @since 10/04/2024
 /*/
@@ -365,20 +365,21 @@ User Function AtvCtr()
         //Atualiza o status do contrato para ativo
         RecLock("Z01", .F.)
         Z01->Z01_STATUS := '2'
+        Z01->Z01_DTATIV := dDataBase
         Z01->(MsUnLock())
 
-        MsgInfo("Contrato efetivado com sucesso, gerado "+AllTrim(Str(nx))+" titulo(s) para o contrato: " + Z01->Z01_CODCTR)
+        MsgInfo("Contrato efetivado com sucesso, gerado "+AllTrim(Str(nx -1))+" titulo(s) para o contrato: " + Z01->Z01_CODCTR)
 
     End Transaction
 
 Return
 
 /*/{Protheus.doc} calcVenc
-Função que realizar o calculo do vencimento de cada parcela, 
+Função que realizar o calculo do vencimento de cada parcela,
 garantindo que será respeitado o dia que usuario determinou, porem se o dia não existir no mes
 a função irá retornar o dia util mais proximo.
 @type function
-@version 1.0 
+@version 1.0
 @author felipe.moreira
 @since 10/04/2024
 @param cDiaVenc, character, dia selecionado pelo usuario para vencimento
@@ -424,9 +425,9 @@ Return dDtCalc
 
 
 /*/{Protheus.doc} fTstCalc
-Função para testar a função de calculo de vencimento quando necessario. 
+Função para testar a função de calculo de vencimento quando necessario.
 @type function
-@version 1.0 
+@version 1.0
 @author felipe.moreira
 @since 10/04/2024
 /*/
