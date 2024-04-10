@@ -5,11 +5,11 @@
 #Include 'APWizard.ch'
 
 
-//VariÃ¡veis EstÃ¡ticas
+//Variaveis Estaticas
 Static cTitulo := 'Cadastro De Contratos Duofy'
 
 /*/{Protheus.doc} CTR001
-Cadastro de Contratos Duofy
+Cadastro de Contratos Duofy 
 @type function
 @version 1.0
 @author Felipe Moreira
@@ -33,7 +33,7 @@ User Function CTR001()
     oBrowse:SetAmbiente(.F.)
 
     oBrowse:AddLegend( "Z01_STATUS == '1'", "BR_AZUL"    , "Pendente" )
-    oBrowse:AddLegend( "Z01_STATUS == '1'", "BR_VERDE"   , "Ativo"  )
+    oBrowse:AddLegend( "Z01_STATUS == '2'", "BR_VERDE"   , "Ativo"  )
 
     //Ativa a Browse
     oBrowse:Activate()
@@ -195,11 +195,11 @@ User Function CTR001L()
 Return Nil
 
 /*/{Protheus.doc} CTR001A
-PE da rotina
+PE da rotina CTR001
 @type function
-@version 12.1.25
+@version 1.0
 @author felipe.moreira
-@since 16/10/2020
+@since 10/04/2024
 /*/
 User Function CTR001A()
 
@@ -257,8 +257,8 @@ User Function CTR001A()
             //Antes da Abertura da Tela valida se pode ser feita alteração.
             if nOperation == 4
                 If FWFldGet("Z01_STATUS") == '2'
-                    Help(NIL, NIL, "Atenção", NIL, "Não é permitido realizar alterações em contratos jÃ¡ efetivados.", 1, 0, NIL, NIL, NIL, NIL, NIL, {"Estorne o contrato para realizar alterações."})
-                    xRet := .F.
+                    Help(NIL, NIL, "Atencao", NIL, "Nao e permitido realizar alteracoes em contratos ja efetivados.", 1, 0, NIL, NIL, NIL, NIL, NIL, {""})
+                    return xRet := .F.
                 EndIf
             EndIf
 
@@ -289,18 +289,32 @@ User Function CTR001A()
 
 Return(xRet)
 
-
+/*/{Protheus.doc} AtvCtr
+Função que realizar a efetivação do contrato, incluindo os respectivos
+titulos no contas a receber.
+@type function
+@version 1.0 
+@author felipe.moreira
+@since 10/04/2024
+/*/
 User Function AtvCtr()
     Local nX         := 0
     Local cNaturez   := SuperGetMv("MV_XNATCTR",.F.,"200024512")
     Local dDataVReal := dDataBase
+    Local nVlrPar  := Round(Z01->Z01_VALOR / Z01->Z01_QTDPAR,2)
+    Local nVlrP01  := nVlrPar
+
+    // calcula se houver diferença de centavos entre o valor total e a soma das parcelas adiciona esse valor a primeira parcela
+    If Z01->Z01_VALOR - (nVlrPar * Z01->Z01_QTDPAR) > 0
+        nVlrP01 += Round(Z01->Z01_VALOR - (nVlrPar * Z01->Z01_QTDPAR),2)
+    EndIF
 
     If Z01->Z01_STATUS == '1'
         If !MsgYesNo('Deseja efetivar o contrato: ' + Z01->Z01_CODCTR + '?','Confirmar')
             Return
         EndIF
     Else
-        Help(NIL, NIL, "Atenção", NIL, "Não é permitido realizar efetivação desse contrato.", 1, 0, NIL, NIL, NIL, NIL, NIL, {"Verifique o status do contrato."})
+        Help(NIL, NIL, "Nao Permitido", NIL, "Nao e permitido realizar efetivacao desse contrato.", 1, 0, NIL, NIL, NIL, NIL, NIL, {"Verifique o status do contrato."})
         Return
     EndIf
 
@@ -330,7 +344,7 @@ User Function AtvCtr()
             aadd(aAutoSE1, {"E1_VENCTO" , dVencCalc                              , NIL})
             aadd(aAutoSE1, {"E1_VENCORI", dVencCalc                              , NIL})
             aadd(aAutoSE1, {"E1_VENCREA", dDataVReal                             , NIL})
-            aadd(aAutoSE1, {"E1_VALOR"  , Z01->Z01_VALOR                         , NIL})
+            aadd(aAutoSE1, {"E1_VALOR"  , IIF(nx == 1,nVlrP01,nVlrPar)           , NIL})
             aadd(aAutoSE1, {"E1_HIST"   , "Inclusao Contrato: " + Z01->Z01_CODCTR, NIL})
             aadd(aAutoSE1, {"E1_MULTNAT", "2"                                    , NIL})
             aadd(aAutoSE1, {"E1_NATUREZ", cNaturez                               , NIL})
@@ -353,12 +367,24 @@ User Function AtvCtr()
         Z01->Z01_STATUS := '2'
         Z01->(MsUnLock())
 
-        MsgInfo("Contrato efetivado com sucesso, gerado "+Str(nx)+" titulo(s) para o contrato: " + Z01->Z01_CODCTR)
+        MsgInfo("Contrato efetivado com sucesso, gerado "+AllTrim(Str(nx))+" titulo(s) para o contrato: " + Z01->Z01_CODCTR)
 
     End Transaction
 
 Return
 
+/*/{Protheus.doc} calcVenc
+Função que realizar o calculo do vencimento de cada parcela, 
+garantindo que será respeitado o dia que usuario determinou, porem se o dia não existir no mes
+a função irá retornar o dia util mais proximo.
+@type function
+@version 1.0 
+@author felipe.moreira
+@since 10/04/2024
+@param cDiaVenc, character, dia selecionado pelo usuario para vencimento
+@param nParcela, numeric, qual parcela está sendo calculada
+@return date, data de vencimento da parcela calculada
+/*/
 Static Function calcVenc(cDiaVenc,nParcela)
 
     Local nSomaMes   := 0
@@ -397,6 +423,13 @@ Static Function calcVenc(cDiaVenc,nParcela)
 Return dDtCalc
 
 
+/*/{Protheus.doc} fTstCalc
+Função para testar a função de calculo de vencimento quando necessario. 
+@type function
+@version 1.0 
+@author felipe.moreira
+@since 10/04/2024
+/*/
 User Function fTstCalc()
     Local nx       := 0
     Local cCrLf    := Chr(13) + Chr(10)
