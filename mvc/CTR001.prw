@@ -50,11 +50,11 @@ Na MenuDef da aplicação instanciamos a interface (View) de outra aplicação
 Static Function MenuDef()
     Local aRotina := {}
 
-    aadd(aRotina, {'Incluir'        , 'VIEWDEF.CTR001'           , 0, 3, 0, .F.})
-    aadd(aRotina, {'Alterar'        , 'VIEWDEF.CTR001'           , 0, 4, 0, .F.})
-    aadd(aRotina, {'Visualizar'     , 'VIEWDEF.CTR001'           , 0, 2, 0, .F.})
-    aadd(aRotina, {'Ativar Contrato', 'processa({|| U_AtvCtr()})', 0, 1, 0, .F.})
-    aadd(aRotina, {'Legenda'        , 'U_CTR001L()'              , 0, 1, 0, .F.})
+    aadd(aRotina, {'Incluir'        , 'VIEWDEF.CTR001'                                  , 0, 3, 0, .F.})
+    aadd(aRotina, {'Alterar'        , 'VIEWDEF.CTR001'                                  , 0, 4, 0, .F.})
+    aadd(aRotina, {'Visualizar'     , 'VIEWDEF.CTR001'                                  , 0, 2, 0, .F.})
+    aadd(aRotina, {'Ativar Contrato', 'processa({|| U_AtvCtr()},"Inserindo Titulos...")', 0, 1, 0, .F.})
+    aadd(aRotina, {'Legenda'        , 'U_CTR001L()'                                     , 0, 1, 0, .F.})
 
 
 Return aRotina
@@ -296,7 +296,9 @@ User Function AtvCtr()
     Local dDataVReal := dDataBase
 
     If Z01->Z01_STATUS == '1'
-        MsgYesNo('Confirmar','Deseja efetivar o contrato: ' + Z01->Z01_CODCTR + '?')
+        If !MsgYesNo('Deseja efetivar o contrato: ' + Z01->Z01_CODCTR + '?','Confirmar')
+            Return
+        EndIF
     Else
         Help(NIL, NIL, "Atenção", NIL, "Não é permitido realizar efetivação desse contrato.", 1, 0, NIL, NIL, NIL, NIL, NIL, {"Verifique o status do contrato."})
         Return
@@ -307,7 +309,7 @@ User Function AtvCtr()
     Begin Transaction
         For nX := 1 To Z01->Z01_QTDPAR
 
-            IncProc("Realizando Inclusão de Titulo do contrato:  " + Z01->Z01_CODCTR + "Parcela: " + str(nx) )
+            IncProc("Inclusao de Titulo do contrato:  " + AllTrim(Z01->Z01_CODCTR) + " - Parcela: " + AllTrim(str(nx)) )
 
             aAutoSE1 	:= {}
 
@@ -317,12 +319,12 @@ User Function AtvCtr()
             dDataVReal := DataValida(dVencCalc,.T.)
 
             aadd(aAutoSE1, {"E1_PREFIXO", "CTR"                                  , NIL})
-            aadd(aAutoSE1, {"E1_PARCELA", STRZERO(nx,3)                          , NIL})
+            aadd(aAutoSE1, {"E1_PARCELA", STRZERO(nx,2)                          , NIL})
             aadd(aAutoSE1, {"E1_TIPO"   , "BOL"                                  , NIL})
             aadd(aAutoSE1, {"E1_CLIENTE", Z01->Z01_CODCLI                        , NIL})
             aadd(aAutoSE1, {"E1_LOJA"   , Z01->Z01_LOJA                          , NIL})
             aadd(aAutoSE1, {"E1_NOMCLI" , Z01->Z01_NOME                          , NIL})
-            aadd(aAutoSE1, {"E1_NUM"    , STRZERO(Z01->Z01_CODCTR,9)             , NIL})
+            aadd(aAutoSE1, {"E1_NUM"    , STRZERO(val(Z01->Z01_CODCTR),9)        , NIL})
             aadd(aAutoSE1, {"E1_EMISSAO", dDataBase                              , NIL})
             aadd(aAutoSE1, {"E1_EMIS1"  , dDataBase                              , NIL})
             aadd(aAutoSE1, {"E1_VENCTO" , dVencCalc                              , NIL})
@@ -342,7 +344,7 @@ User Function AtvCtr()
                 Help(NIL, NIL, "Atenção", NIL, "O erro informado impediu a geração do titulo. ", 1, 0, NIL, NIL, NIL, NIL, NIL, {"Corrija o erro. "})
                 //Disarma a transacao e nao efetiva o contrato
                 DisarmTransaction()
-                Exit
+                Return
             endif
         Next nX
 
@@ -363,13 +365,9 @@ Static Function calcVenc(cDiaVenc,nParcela)
     Local cDiaAtual  := Day2Str(dDataBase)
     Local cMes       := Month2Str(dDataBase)
     Local cAno       := Year2Str(dDataBase)
-    Local dDtVenc    := StoD(cAno+cMes+cDiaVenc)
+    Local dIniMes    := StoD(cAno+cMes+'01')
+    Local nCount     := 0
 
-    // ajusta data para dia valido antes de começar, pois se a data não existir é porque o dia não existe naquele Mes.
-    while Empty(dDtVenc)
-        cDiaAj   := AllTrim(str(val(cDiaVenc) - 1))
-        dDtVenc  := StoD(cAno+cMes+cDiaAj)
-    EndDo
 
     // Se a data de vencimento for maior que a data atual soma 1 mes na data de vencimento, primeiro vencimento
     // deve ocorrer apenas no mes seguinte.
@@ -377,54 +375,26 @@ Static Function calcVenc(cDiaVenc,nParcela)
         nSomaMes := 1
     EndIF
 
-    // Para cada parcela adicionar 1 mes ou seja parcela -1
+    // Para cada parcela adicionar 1 mes ou somar ao mes o valor da parcela parcela -1
     If nParcela > 1
         nSomaMes += nParcela -1
     EndIF
 
-    // soma na data escolhida a quantidade de meses para a data de vencimento de cada parcela
-    dDtCalc := MonthSum(dDtVenc,nSomaMes)
 
-    // Enquanto a data não for dia valido, ou seja esse dia exista no mes, subtrai 1 dia.
-    While !ehDiaValido(dDtCalc)
-        dDtCalc := DaySub(dDtCalc,1)
+    // soma a quantidade de meses encontrada nas regras acima, para esse primeiro calculo utiliza o primeiro dia do mes
+    dDtCalc := MonthSum(dIniMes,nSomaMes)
+    // realiza ajuste do dia 01 para o dia selecionando para o vencimento agora já no mes da parcela e se retornar vazio é por que o dia não existe
+    dDtCalc := StoD(Substr(DtoS(dDtCalc),1,6) + cDiaVenc)
+
+    While Empty(dDtCalc)
+        nCount += 1
+
+        dDtCalc := MonthSum(dIniMes,nSomaMes)
+
+        dDtCalc := StoD(Substr(DtoS(dDtCalc),1,6) + AllTrim(StrZero(val(cDiaVenc)-nCount,2)))
     EndDO
 
 Return dDtCalc
-
-
-Static Function ehDiaValido(dData)
-
-    Local nDia := Day(dData)
-    Local nMes := Month(dData)
-    Local lDiaValido := .F.
-    //preenche array com dias de cada mes na ordem
-    Local aDiasPorMes := {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
-
-    // Verifica se o ano é bissexto e ajusta os dias de fevereiro
-    If ehBissexto(dData)
-        aDiasPorMes[2] := 29
-    EndIf
-
-    // Verifica se o dia é válido para o mês
-    If nDia > 0 .AND. nDia <= aDiasPorMes[nMes]
-        lDiaValido := .T.
-    EndIf
-
-Return lDiaValido
-
-
-
-Static Function ehBissexto(dDataAtual)
-
-    Local lehBissexto := .F.
-    Local nAno := Year(dDataAtual)
-
-    If (nAno % 4 == 0 .AND. nAno % 100 <> 0) .OR. (nAno % 400 == 0)
-        lehBissexto := .T.
-    EndIf
-
-Return lehBissexto
 
 
 User Function fTstCalc()
@@ -435,8 +405,8 @@ User Function fTstCalc()
     RPCSetType(3)
     PREPARE ENVIRONMENT EMPRESA "99" FILIAL "01"
 
-    for nx := 1 to 12
-        //Calcula as datas de vencimento da parcela
+    for nx := 1 to 36
+        //Calcula as datas de vencimento d7a parcela
         dVencCalc := calcVenc(cDiaVenc,nX)
         // Funcao DataValida verifica se o dia informado é dia util, se não for retorna o dia util mais proximo
         dDataVReal := DataValida(dVencCalc,.T.)
@@ -447,6 +417,7 @@ User Function fTstCalc()
 
     RESET ENVIRONMENT
 Return
+//estou deixando o resultado do teste propositalmente para que possam ver como foi feita a validação da função.
 
 /* resultado teste data menor que hoje
 Parcela: 1  Data base: 10/04/24 Data Vencimento: 09/05/24 Data Real: 09/05/24
@@ -465,15 +436,39 @@ Parcela: 12 Data base: 10/04/24 Data Vencimento: 09/04/25 Data Real: 09/04/25
 
 /* teste com dia 31 para textas fevereiro e meses sem 31 dias
 Parcela: 1  Data base: 10/04/24 Data Vencimento: 30/04/24 Data Real: 30/04/24
-Parcela: 2  Data base: 10/04/24 Data Vencimento: 30/05/24 Data Real: 30/05/24
+Parcela: 2  Data base: 10/04/24 Data Vencimento: 31/05/24 Data Real: 31/05/24
 Parcela: 3  Data base: 10/04/24 Data Vencimento: 30/06/24 Data Real: 01/07/24
-Parcela: 4  Data base: 10/04/24 Data Vencimento: 30/07/24 Data Real: 30/07/24
-Parcela: 5  Data base: 10/04/24 Data Vencimento: 30/08/24 Data Real: 30/08/24
+Parcela: 4  Data base: 10/04/24 Data Vencimento: 31/07/24 Data Real: 31/07/24
+Parcela: 5  Data base: 10/04/24 Data Vencimento: 31/08/24 Data Real: 02/09/24
 Parcela: 6  Data base: 10/04/24 Data Vencimento: 30/09/24 Data Real: 30/09/24
-Parcela: 7  Data base: 10/04/24 Data Vencimento: 30/10/24 Data Real: 30/10/24
+Parcela: 7  Data base: 10/04/24 Data Vencimento: 31/10/24 Data Real: 31/10/24
 Parcela: 8  Data base: 10/04/24 Data Vencimento: 30/11/24 Data Real: 02/12/24
-Parcela: 9  Data base: 10/04/24 Data Vencimento: 30/12/24 Data Real: 30/12/24
-Parcela: 10 Data base: 10/04/24 Data Vencimento: 30/01/25 Data Real: 30/01/25
+Parcela: 9  Data base: 10/04/24 Data Vencimento: 31/12/24 Data Real: 31/12/24
+Parcela: 10 Data base: 10/04/24 Data Vencimento: 31/01/25 Data Real: 31/01/25
 Parcela: 11 Data base: 10/04/24 Data Vencimento: 28/02/25 Data Real: 28/02/25
-Parcela: 12 Data base: 10/04/24 Data Vencimento: 30/03/25 Data Real: 31/03/25
+Parcela: 12 Data base: 10/04/24 Data Vencimento: 31/03/25 Data Real: 31/03/25
+Parcela: 13 Data base: 10/04/24 Data Vencimento: 30/04/25 Data Real: 30/04/25
+Parcela: 14 Data base: 10/04/24 Data Vencimento: 31/05/25 Data Real: 02/06/25
+Parcela: 15 Data base: 10/04/24 Data Vencimento: 30/06/25 Data Real: 30/06/25
+Parcela: 16 Data base: 10/04/24 Data Vencimento: 31/07/25 Data Real: 31/07/25
+Parcela: 17 Data base: 10/04/24 Data Vencimento: 31/08/25 Data Real: 01/09/25
+Parcela: 18 Data base: 10/04/24 Data Vencimento: 30/09/25 Data Real: 30/09/25
+Parcela: 19 Data base: 10/04/24 Data Vencimento: 31/10/25 Data Real: 31/10/25
+Parcela: 20 Data base: 10/04/24 Data Vencimento: 30/11/25 Data Real: 01/12/25
+Parcela: 21 Data base: 10/04/24 Data Vencimento: 31/12/25 Data Real: 31/12/25
+Parcela: 22 Data base: 10/04/24 Data Vencimento: 31/01/26 Data Real: 02/02/26
+Parcela: 23 Data base: 10/04/24 Data Vencimento: 28/02/26 Data Real: 02/03/26
+Parcela: 24 Data base: 10/04/24 Data Vencimento: 31/03/26 Data Real: 31/03/26
+Parcela: 25 Data base: 10/04/24 Data Vencimento: 30/04/26 Data Real: 30/04/26
+Parcela: 26 Data base: 10/04/24 Data Vencimento: 31/05/26 Data Real: 01/06/26
+Parcela: 27 Data base: 10/04/24 Data Vencimento: 30/06/26 Data Real: 30/06/26
+Parcela: 28 Data base: 10/04/24 Data Vencimento: 31/07/26 Data Real: 31/07/26
+Parcela: 29 Data base: 10/04/24 Data Vencimento: 31/08/26 Data Real: 31/08/26
+Parcela: 30 Data base: 10/04/24 Data Vencimento: 30/09/26 Data Real: 30/09/26
+Parcela: 31 Data base: 10/04/24 Data Vencimento: 31/10/26 Data Real: 03/11/26
+Parcela: 32 Data base: 10/04/24 Data Vencimento: 30/11/26 Data Real: 30/11/26
+Parcela: 33 Data base: 10/04/24 Data Vencimento: 31/12/26 Data Real: 31/12/26
+Parcela: 34 Data base: 10/04/24 Data Vencimento: 31/01/27 Data Real: 01/02/27
+Parcela: 35 Data base: 10/04/24 Data Vencimento: 28/02/27 Data Real: 01/03/27
+Parcela: 36 Data base: 10/04/24 Data Vencimento: 31/03/27 Data Real: 31/03/27
 */
