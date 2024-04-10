@@ -328,7 +328,7 @@ User Function AtvCtr()
             aAutoSE1 	:= {}
 
             //Calcula as datas de vencimento da parcela
-            dVencCalc := calcVenc(Z01->Z01_DTVENC,nX)
+            dVencCalc := calcVenc(StrZero(VAL(Z01->Z01_DTVENC),2),nX)
             // Funcao DataValida verifica se o dia informado é dia util, se não for retorna o dia util mais proximo
             dDataVReal := DataValida(dVencCalc,.T.)
 
@@ -355,7 +355,7 @@ User Function AtvCtr()
 
             If lMsErroAuto
                 MostraErro()
-                Help(NIL, NIL, "Atenção", NIL, "O erro informado impediu a geração do titulo. ", 1, 0, NIL, NIL, NIL, NIL, NIL, {"Corrija o erro. "})
+                Help(NIL, NIL, "Atencao", NIL, "O erro informado impediu a geracao do titulo. ", 1, 0, NIL, NIL, NIL, NIL, NIL, {"Corrija o erro. "})
                 //Disarma a transacao e nao efetiva o contrato
                 DisarmTransaction()
                 Return
@@ -434,12 +434,12 @@ Função para testar a função de calculo de vencimento quando necessario.
 User Function fTstCalc()
     Local nx       := 0
     Local cCrLf    := Chr(13) + Chr(10)
-    Local cDiaVenc := "31"
+    Local cDiaVenc := "03"
     Local cMsg     := ""
     RPCSetType(3)
     PREPARE ENVIRONMENT EMPRESA "99" FILIAL "01"
 
-    for nx := 1 to 36
+    for nx := 1 to 48
         //Calcula as datas de vencimento d7a parcela
         dVencCalc := calcVenc(cDiaVenc,nX)
         // Funcao DataValida verifica se o dia informado é dia util, se não for retorna o dia util mais proximo
