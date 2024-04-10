@@ -25,7 +25,8 @@ User Function CTR001()
 
     //Setando a tabela
     oBrowse:SetAlias( 'Z01' )
-    //Setando a descriÃ§Ã£o da rotina
+    //Setando a descrição da rotina
+
     oBrowse:SetDescription( cTitulo )
     oBrowse:SetDetails(.F., {||})
     oBrowse:SetWalkThru(.F.)
@@ -43,8 +44,8 @@ Return NIL
 
 //----------------------------MenuDef---------------------------------------
 /*
-Define as operaÃ§Ãµes que serÃ£o realizadas pela aplicaÃ§Ã£o.
-Na MenuDef da aplicaÃ§Ã£o instanciamos a interface (View) de outra aplicaÃ§Ã£o
+Define as operações que serão realizadas pela aplicação.
+Na MenuDef da aplicação instanciamos a interface (View) de outra aplicação
 */
 Static Function MenuDef()
     Local aRotina := {}
@@ -61,11 +62,11 @@ Return aRotina
 //----------------------------ModelDef---------------------------------------
 
 /*
-Define a regra de negÃ³cios propriamente dita onde sÃ£o definidas
-* Todas as entidades (tabelas) que farÃ£o parte do modelo de dados (Model);
+Define a regra de negÃ³cios propriamente dita onde são definidas
+* Todas as entidades (tabelas) que farão parte do modelo de dados (Model);
 * Regras de dependÃªncia entre as entidades;
-* ValidaÃ§Ãµes (de campos e aplicaÃ§Ã£o);
-* PersistÃªncia dos dados (gravaÃ§Ã£o)
+* Validações (de campos e aplicação);
+* PersistÃªncia dos dados (gravação)
 */
 
 Static Function ModelDef()
@@ -75,7 +76,7 @@ Static Function ModelDef()
     Local oStruZ03 := FWFormStruct( 1, 'Z03' )
     Local oModel
 
-    // Criando o modelo e os relacionamentos, atenÃ§Ã£o ao ID do modelo DHO001A'M'
+    // Criando o modelo e os relacionamentos, atenção ao ID do modelo DHO001A'M'
     oModel := MPFormModel():New( 'CTR001A',/* { | oModel | CTR001( oModel ) }*/, /*{ | oModel | CTR001( oModel ) }*/)
 
     // inseri ao modelo a estrutura do formulario de edicao por campo
@@ -103,9 +104,9 @@ Static Function ModelDef()
     oModel:GetModel( 'Z03DETAIL' ):SetDescription('Produtos' + cTitulo)
 
     //oModel:GetModel('ZFBDETAIL'):setOptional(.T.)
-    // Ao final da funÃ§Ã£o ModelDef, deve ser retornado o objeto de Modelo de dados (Model) gerado na funÃ§Ã£o.
+    // Ao final da função ModelDef, deve ser retornado o objeto de Modelo de dados (Model) gerado na função.
 
-    //NÃ£o permitir alteraÃ§Ã£o do campo centro de custo nas alteraÃ§Ãµes.
+    //Não permitir alteração do campo centro de custo nas alterações.
     //If Altera
     //	oStruZFB:SetProperty("ZFB_CC", MODEL_FIELD_WHEN, {|| .F.})
     //EndIF
@@ -115,11 +116,11 @@ Return oModel
 
 //------------------------------ViewDef-------------------------------------
 /*
-Define como serÃ¡ a interface (construÃ§Ã£o da interface) e portanto como o usuario interage com o modelo (Model)
+Define como serÃ¡ a interface (construção da interface) e portanto como o usuario interage com o modelo (Model)
 recebe dados informado pelo usuario e fornece ao modelo (modelDef).
 */
 Static Function ViewDef()
-    // CriaÃ§Ã£o da estrutura que sera utilizada pela view
+    // Criação da estrutura que sera utilizada pela view
     Local oStruZ01 := FWFormStruct( 2, 'Z01' )
     Local oStruZ02 := FWFormStruct( 2, 'Z02' )
     Local oStruZ03 := FWFormStruct( 2, 'Z03' )
@@ -134,7 +135,7 @@ Static Function ViewDef()
     // Cria o objeto View
     oView := FWFormView():New()
 
-    // DefiniÃ§Ã£o do Modelo de dados que serÃ¡ utilizado
+    // Definição do Modelo de dados que serÃ¡ utilizado
     oView:SetModel( oModel )
 
     //Adiciona na nossa View um controle do tipo formulÃ¡rio (antiga Enchoice)
@@ -174,7 +175,7 @@ Return oView
 
 
 /*/{Protheus.doc} CTR001L
-FunÃ§Ã£o de Legenda
+Função de Legenda
 @type function
 @version 1.0
 @author felipe.moreira
@@ -253,10 +254,10 @@ User Function CTR001A()
 
             xRet := .T.
 
-            //Antes da Abertura da Tela valida se pode ser feita alteraÃ§Ã£o.
+            //Antes da Abertura da Tela valida se pode ser feita alteração.
             if nOperation == 4
                 If FWFldGet("Z01_STATUS") == '2'
-                    Help(NIL, NIL, "AtenÃ§Ã£o", NIL, "NÃ£o Ã© permitido realizar alteraÃ§Ãµes em contratos jÃ¡ efetivados.", 1, 0, NIL, NIL, NIL, NIL, NIL, {"Estorne o contrato para realizar alteraÃ§Ãµes."})
+                    Help(NIL, NIL, "Atenção", NIL, "Não é permitido realizar alterações em contratos jÃ¡ efetivados.", 1, 0, NIL, NIL, NIL, NIL, NIL, {"Estorne o contrato para realizar alterações."})
                     xRet := .F.
                 EndIf
             EndIf
@@ -292,35 +293,28 @@ Return(xRet)
 User Function AtvCtr()
     Local nX         := 0
     Local cNaturez   := SuperGetMv("MV_XNATCTR",.F.,"200024512")
-    Local dDataVenc  := dDataBase
     Local dDataVReal := dDataBase
 
     If Z01->Z01_STATUS == '1'
         MsgYesNo('Confirmar','Deseja efetivar o contrato: ' + Z01->Z01_CODCTR + '?')
     Else
-        Help(NIL, NIL, "AtenÃ§Ã£o", NIL, "NÃ£o Ã© permitido realizar efetivaÃ§Ã£o desse contrato.", 1, 0, NIL, NIL, NIL, NIL, NIL, {"Verifique o status do contrato."})
+        Help(NIL, NIL, "Atenção", NIL, "Não é permitido realizar efetivação desse contrato.", 1, 0, NIL, NIL, NIL, NIL, NIL, {"Verifique o status do contrato."})
         Return
     EndIf
 
     ProcRegua(Z01->Z01_QTDPAR)
 
-       // Funcao DataValida verifica se o dia informado Ã© dia util, se nÃ£o for retorna o dia util mais proximo
-    dDataVReal := DataValida(dDataVenc,.T.)
-
     Begin Transaction
         For nX := 1 To Z01->Z01_QTDPAR
 
-            IncProc("Realizando InclusÃ£o de Titulo do contrato:  " + Z01->Z01_CODCTR + "Parcela: " + str(nx) )
+            IncProc("Realizando Inclusão de Titulo do contrato:  " + Z01->Z01_CODCTR + "Parcela: " + str(nx) )
 
             aAutoSE1 	:= {}
-            
-            //Calcula as datas de vencimento e vencimento real 
-            //[1]- data de vencimento calculada
-            //[2]- data de vencimento real dia util
-            aVenCalculado := {}
-            aVenCalculado := calcVenc(Z01->Z01_DTVENC,nX)
-            dDataVenc  := aVenCalculado[1]
-            dDataVReal := aVenCalculado[2]
+
+            //Calcula as datas de vencimento da parcela
+            dVencCalc := calcVenc(Z01->Z01_DTVENC,nX)
+            // Funcao DataValida verifica se o dia informado é dia util, se não for retorna o dia util mais proximo
+            dDataVReal := DataValida(dVencCalc,.T.)
 
             aadd(aAutoSE1, {"E1_PREFIXO", "CTR"                                  , NIL})
             aadd(aAutoSE1, {"E1_PARCELA", STRZERO(nx,3)                          , NIL})
@@ -331,8 +325,8 @@ User Function AtvCtr()
             aadd(aAutoSE1, {"E1_NUM"    , STRZERO(Z01->Z01_CODCTR,9)             , NIL})
             aadd(aAutoSE1, {"E1_EMISSAO", dDataBase                              , NIL})
             aadd(aAutoSE1, {"E1_EMIS1"  , dDataBase                              , NIL})
-            aadd(aAutoSE1, {"E1_VENCTO" , dDataVenc                              , NIL})
-            aadd(aAutoSE1, {"E1_VENCORI", dDataVenc                              , NIL})
+            aadd(aAutoSE1, {"E1_VENCTO" , dVencCalc                              , NIL})
+            aadd(aAutoSE1, {"E1_VENCORI", dVencCalc                              , NIL})
             aadd(aAutoSE1, {"E1_VENCREA", dDataVReal                             , NIL})
             aadd(aAutoSE1, {"E1_VALOR"  , Z01->Z01_VALOR                         , NIL})
             aadd(aAutoSE1, {"E1_HIST"   , "Inclusao Contrato: " + Z01->Z01_CODCTR, NIL})
@@ -345,7 +339,7 @@ User Function AtvCtr()
 
             If lMsErroAuto
                 MostraErro()
-                Help(NIL, NIL, "AtenÃ§Ã£o", NIL, "O erro informado impediu a geraÃ§Ã£o do titulo. ", 1, 0, NIL, NIL, NIL, NIL, NIL, {"Corrija o erro. "})
+                Help(NIL, NIL, "Atenção", NIL, "O erro informado impediu a geração do titulo. ", 1, 0, NIL, NIL, NIL, NIL, NIL, {"Corrija o erro. "})
                 //Disarma a transacao e nao efetiva o contrato
                 DisarmTransaction()
                 Exit
@@ -363,20 +357,123 @@ User Function AtvCtr()
 
 Return
 
-Static Function calcVenc(cDtVenc,nParcela)
+Static Function calcVenc(cDiaVenc,nParcela)
 
-    Local dDataAtual := dDataBase
-    Local aVencimento := {}
+    Local nSomaMes   := 0
+    Local cDiaAtual  := Day2Str(dDataBase)
+    Local cMes       := Month2Str(dDataBase)
+    Local cAno       := Year2Str(dDataBase)
+    Local dDtVenc    := StoD(cAno+cMes+cDiaVenc)
 
-    // Se parcela 1 precisa verificar se a data de vencimento Ã© maior que a data atual
-    if nParcela == 1
-        cDiaAtual := Day2Str(dDataAtual)
+    // ajusta data para dia valido antes de começar, pois se a data não existir é porque o dia não existe naquele Mes.
+    while Empty(dDtVenc)
+        cDiaAj   := AllTrim(str(val(cDiaVenc) - 1))
+        dDtVenc  := StoD(cAno+cMes+cDiaAj)
+    EndDo
+
+    // Se a data de vencimento for maior que a data atual soma 1 mes na data de vencimento, primeiro vencimento
+    // deve ocorrer apenas no mes seguinte.
+    If cDiaAtual > cDiaVenc
+        nSomaMes := 1
     EndIF
-    
 
-    If cDtVenc > cDiaAtual
-        
+    // Para cada parcela adicionar 1 mes ou seja parcela -1
+    If nParcela > 1
+        nSomaMes += nParcela -1
     EndIF
 
-Return aVencimento
+    // soma na data escolhida a quantidade de meses para a data de vencimento de cada parcela
+    dDtCalc := MonthSum(dDtVenc,nSomaMes)
 
+    // Enquanto a data não for dia valido, ou seja esse dia exista no mes, subtrai 1 dia.
+    While !ehDiaValido(dDtCalc)
+        dDtCalc := DaySub(dDtCalc,1)
+    EndDO
+
+Return dDtCalc
+
+
+Static Function ehDiaValido(dData)
+
+    Local nDia := Day(dData)
+    Local nMes := Month(dData)
+    Local lDiaValido := .F.
+    //preenche array com dias de cada mes na ordem
+    Local aDiasPorMes := {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
+
+    // Verifica se o ano é bissexto e ajusta os dias de fevereiro
+    If ehBissexto(dData)
+        aDiasPorMes[2] := 29
+    EndIf
+
+    // Verifica se o dia é válido para o mês
+    If nDia > 0 .AND. nDia <= aDiasPorMes[nMes]
+        lDiaValido := .T.
+    EndIf
+
+Return lDiaValido
+
+
+
+Static Function ehBissexto(dDataAtual)
+
+    Local lehBissexto := .F.
+    Local nAno := Year(dDataAtual)
+
+    If (nAno % 4 == 0 .AND. nAno % 100 <> 0) .OR. (nAno % 400 == 0)
+        lehBissexto := .T.
+    EndIf
+
+Return lehBissexto
+
+
+User Function fTstCalc()
+    Local nx       := 0
+    Local cCrLf    := Chr(13) + Chr(10)
+    Local cDiaVenc := "31"
+    Local cMsg     := ""
+    RPCSetType(3)
+    PREPARE ENVIRONMENT EMPRESA "99" FILIAL "01"
+
+    for nx := 1 to 12
+        //Calcula as datas de vencimento da parcela
+        dVencCalc := calcVenc(cDiaVenc,nX)
+        // Funcao DataValida verifica se o dia informado é dia util, se não for retorna o dia util mais proximo
+        dDataVReal := DataValida(dVencCalc,.T.)
+        cMsg += "Parcela: " + AllTrim(str(nx)) + " Data base: " +DTOC(dDataBase)+ " Data Vencimento: " + DTOC(dVencCalc) + " Data Real: " + DTOC(dDataVReal) + cCrLf
+    Next nx
+
+    MsgInfo(cMsg)
+
+    RESET ENVIRONMENT
+Return
+
+/* resultado teste data menor que hoje
+Parcela: 1  Data base: 10/04/24 Data Vencimento: 09/05/24 Data Real: 09/05/24
+Parcela: 2  Data base: 10/04/24 Data Vencimento: 09/06/24 Data Real: 10/06/24
+Parcela: 3  Data base: 10/04/24 Data Vencimento: 09/07/24 Data Real: 09/07/24
+Parcela: 4  Data base: 10/04/24 Data Vencimento: 09/08/24 Data Real: 09/08/24
+Parcela: 5  Data base: 10/04/24 Data Vencimento: 09/09/24 Data Real: 09/09/24
+Parcela: 6  Data base: 10/04/24 Data Vencimento: 09/10/24 Data Real: 09/10/24
+Parcela: 7  Data base: 10/04/24 Data Vencimento: 09/11/24 Data Real: 11/11/24
+Parcela: 8  Data base: 10/04/24 Data Vencimento: 09/12/24 Data Real: 09/12/24
+Parcela: 9  Data base: 10/04/24 Data Vencimento: 09/01/25 Data Real: 09/01/25
+Parcela: 10 Data base: 10/04/24 Data Vencimento: 09/02/25 Data Real: 10/02/25
+Parcela: 11 Data base: 10/04/24 Data Vencimento: 09/03/25 Data Real: 10/03/25
+Parcela: 12 Data base: 10/04/24 Data Vencimento: 09/04/25 Data Real: 09/04/25
+*/
+
+/* teste com dia 31 para textas fevereiro e meses sem 31 dias
+Parcela: 1  Data base: 10/04/24 Data Vencimento: 30/04/24 Data Real: 30/04/24
+Parcela: 2  Data base: 10/04/24 Data Vencimento: 30/05/24 Data Real: 30/05/24
+Parcela: 3  Data base: 10/04/24 Data Vencimento: 30/06/24 Data Real: 01/07/24
+Parcela: 4  Data base: 10/04/24 Data Vencimento: 30/07/24 Data Real: 30/07/24
+Parcela: 5  Data base: 10/04/24 Data Vencimento: 30/08/24 Data Real: 30/08/24
+Parcela: 6  Data base: 10/04/24 Data Vencimento: 30/09/24 Data Real: 30/09/24
+Parcela: 7  Data base: 10/04/24 Data Vencimento: 30/10/24 Data Real: 30/10/24
+Parcela: 8  Data base: 10/04/24 Data Vencimento: 30/11/24 Data Real: 02/12/24
+Parcela: 9  Data base: 10/04/24 Data Vencimento: 30/12/24 Data Real: 30/12/24
+Parcela: 10 Data base: 10/04/24 Data Vencimento: 30/01/25 Data Real: 30/01/25
+Parcela: 11 Data base: 10/04/24 Data Vencimento: 28/02/25 Data Real: 28/02/25
+Parcela: 12 Data base: 10/04/24 Data Vencimento: 30/03/25 Data Real: 31/03/25
+*/
