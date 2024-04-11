@@ -31,8 +31,13 @@ User Function consUSD(dDataConsulta as date) as numeric
 
         //Se passar de 5 dias sem encontrar a cotação, retorna 0 e avisa o usuÃ¡rio que não foi possÃ­vel obter a cotação
         IF nQuantidadeDias > 5
-            MSGSTOP( OemToAnsi('Não Foi Possivel Obter a Cotação do Dólar para a Data Informada.'),"Erro")
-            Return nValor := 0
+            // devido identificar que a API do BACEN esteve indisponíveis em alguns momentos, foi implementada uma consulta de contingencia em outra API menos conhecida.
+            nValor := consultaContingencia(dDataConsulta)
+            If nValor == 0
+                MSGSTOP( OemToAnsi('Não Foi Possivel Obter a Cotação do Dólar'),"Erro")
+                Return nValor := 0
+            EndiF
+            Return nValor
         EndIF
 
         //Trata a data para o formato que a API do BACEN aceita
@@ -91,6 +96,55 @@ Static Function trataDataParaConsulta(dDataConsulta as date) as character
 
 Return cDataTratada
 
+/*/{Protheus.doc} consultaContingencia
+função de contingencia para consulta de valor dolar
+a api principal que era do BACEN parece não ser 100%
+confiavel
+@type function
+@version 1.0
+@author felipe.moreira
+@since 11/04/2024
+@param dDataConsulta, date, data da consulta
+@return numeric, valor do dolar
+/*/
+Static Function consultaContingencia(dDataConsulta) as numeric
+    Local nValor          := 0                                                                                                                                                as numeric
+    Local cUrl            := "https://economia.awesomeapi.com.br/" as character
+    Local cPath           := "last/USD-BRL"
+    Local aHeadOut        := {}                                                                                                                                               as array
+    local oRestClient                                                                                                                                                         as object
+    local oRet
+    local oRetorno
+
+
+    oRestClient := FWRest():New(cUrl)
+    oRestClient:setPath(cPath)
+
+    //Adiciona o cabeçalho da requisição
+    aadd(aHeadOut,'Content-Type: application/json')
+
+    //Define o timeout da requisição 120 segundos evitar
+    oRestClient:nTimeOut := 120
+
+    //Faz a requisição GET
+    lRet := oRestClient:GET(aHeadOut)
+    cRetorno := oRestClient:GetResult()
+    oRet := oRestClient:ORESPONSEH
+
+    //Recupera o retorno da API
+    oRetorno :=  JsonObject():New()
+    ret := oRetorno:FromJson(cRetorno)
+
+    //Se o retorno for um objeto e tiver a propriedade value, pega o valor da cotação
+    If ValType(oRetorno) == 'J'
+        If ValType(oRetorno["USDBRL"]) == 'J' .AND. ValType(oRetorno["USDBRL"]["ask"]) == "C"
+            nValor := Round(Val(oRetorno["USDBRL"]["ask"]),2)
+        EndIf
+    EndIF
+
+Return nValor
+
+
 /*/{Protheus.doc} testaFuncaoconsUSD
 Função para testar a função consUSD que realiza a consulta da cotação do dolar na API do BACEN
 @type function
@@ -108,7 +162,9 @@ User Function testaFuncaoConsUSD(dDataConsulta as date) as numeric
 
     nValor := U_consUSD(dDataConsulta)
 
+
     MsgInfo(OemToAnsi('Valor do Dolar para a data passada é: ')+ str(nValor),OemToAnsi("Resultado Teste Função consUSD"))
 
     RESET ENVIRONMENT
 Return nValor
+
