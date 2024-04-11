@@ -257,7 +257,8 @@ User Function CTR001A()
             //Antes da Abertura da Tela valida se pode ser feita alteraÃ§Ã£o.
             if nOperation == 4
                 If FWFldGet("Z01_STATUS") == '2'
-                    Help(NIL, NIL, "Atencao", NIL, "Nao e permitido realizar alteracoes em contratos ja efetivados.", 1, 0, NIL, NIL, NIL, NIL, NIL, {""})
+                    //Help(NIL, NIL, "Atencao", NIL, "Nao e permitido realizar alteracoes em contratos ja efetivados.", 1, 0, NIL, NIL, NIL, NIL, NIL, {""})
+                    Help(NIL, NIL, OemToAnsi("Atenção"), NIL, OemToAnsi("Não é permitido realizar alterações em contratos já efetivados."), 1, 0, NIL, NIL, NIL, NIL, NIL, {""})
                     return xRet := .F.
                 EndIf
             EndIf
@@ -314,7 +315,7 @@ User Function AtvCtr()
             Return
         EndIF
     Else
-        Help(NIL, NIL, "Nao Permitido", NIL, "Nao e permitido realizar efetivacao desse contrato.", 1, 0, NIL, NIL, NIL, NIL, NIL, {"Verifique o status do contrato."})
+        Help(NIL, NIL, OemToAnsi("Não Permitido"), NIL, OemToAnsi("Não é permitido realizar a efetivação deste contrato."), 1, 0, NIL, NIL, NIL, NIL, NIL, {OemToAnsi("Verifique o status do contrato.")})
         Return
     EndIf
 
@@ -323,7 +324,7 @@ User Function AtvCtr()
     Begin Transaction
         For nX := 1 To Z01->Z01_QTDPAR
 
-            IncProc("Inclusao de Titulo do contrato:  " + AllTrim(Z01->Z01_CODCTR) + " - Parcela: " + AllTrim(str(nx)) )
+            IncProc(OemToAnsi("Inclusão de Titulo do contrato:  ") + AllTrim(Z01->Z01_CODCTR) + " - Parcela: " + AllTrim(str(nx)) )
 
             aAutoSE1 	:= {}
 
@@ -355,7 +356,7 @@ User Function AtvCtr()
 
             If lMsErroAuto
                 MostraErro()
-                Help(NIL, NIL, "Atencao", NIL, "O erro informado impediu a geracao do titulo. ", 1, 0, NIL, NIL, NIL, NIL, NIL, {"Corrija o erro. "})
+                Help(NIL, NIL, OemToAnsi("Atenção"), NIL, OemToAnsi("O erro informado impediu a geração do título."), 1, 0, NIL, NIL, NIL, NIL, NIL, {OemToAnsi("Corrija o erro.")})
                 //Disarma a transacao e nao efetiva o contrato
                 DisarmTransaction()
                 Return

@@ -5,15 +5,15 @@
 #include "TBICONN.ch"
 
 /*/{Protheus.doc} consUSD
-Fun√ß√£o realiza a consulta da cota√ß√£o do d√≥lar na API do BACEN
-ser√° feita uma requisi√ß√£o GET para a API do BACEN com a data de consulta com at√© 5 tentativas de dias anteriores
-pois o bacen n√£o retorna a cota√ß√£o caso n√£o haja cota√ß√£o para o dia.
+FunÁ„o realiza a consulta da cotaÁ„o do dolar na API do BACEN
+ser√° feita uma requisiÁ„o GET para a API do BACEN com a data de consulta com atÈ 5 tentativas de dias anteriores
+pois o bacen n„o retorna a cotaÁ„o caso n„o haja cotaÁ„o para o dia.
 @type function
 @version  1.0
 @author felipe.moreira
 @since 06/04/2024
-@param dDataConsulta, date, data para consulta da cota√ß√£o
-@return numeric, valor da cota√ß√£o do d√≥lar
+@param dDataConsulta, date, data para consulta da cotaÁ„o
+@return numeric, valor da cotaÁ„o do dolar
 /*/
 User Function consUSD(dDataConsulta as date) as numeric
     Local nValor          := 0                                                                                                                                                as numeric
@@ -26,17 +26,17 @@ User Function consUSD(dDataConsulta as date) as numeric
     Local lContinua       := .T.                                                                                                                                              as logical
     Local nQuantidadeDias := 0                                                                                                                                                as numeric
 
-    //La√ßo para garantir que sejam testados varios dias at√© encontrar a cota√ß√£o, pois a API do BACEN n√£o retorna caso o n√£o haja cota√ß√£o para o dia.
+    //LaÁo para garantir que sejam testados varios dias atÈ encontrar a cotaÁ„o, pois a API do BACEN n„o retorna caso o n„o haja cotaÁ„o para o dia.
     while lContinua
 
-        //Se passar de 5 dias sem encontrar a cota√ß√£o, retorna 0 e avisa o usu√°rio que n√£o foi poss√≠vel obter a cota√ß√£o
+        //Se passar de 5 dias sem encontrar a cotaÁ„o, retorna 0 e avisa o usu√°rio que n„o foi poss√≠vel obter a cotaÁ„o
         IF nQuantidadeDias > 5
-            MSGSTOP( 'Aten√ß√£o','N√£o foi poss√≠vel obter a cota√ß√£o do d√≥lar')
+            MSGSTOP( OemToAnsi('N„o Foi Possivel Obter a CotaÁ„o do DÛlar para a Data Informada.'),"Erro")
             Return nValor := 0
         EndIF
 
         //Trata a data para o formato que a API do BACEN aceita
-        //busca data de e data at√©.
+        //busca data de e data atÈ.
         cDataInicial := trataDataParaConsulta(dDataConsulta - nQuantidadeDias)
         cDataFinal   := trataDataParaConsulta(dDataConsulta)
         cPath := "?@dataInicial='"+cDataInicial+"'&@dataFinalCotacao='"+cDataFinal+"'&$format=json"
@@ -44,13 +44,13 @@ User Function consUSD(dDataConsulta as date) as numeric
         oRestClient := FWRest():New(cUrl)
         oRestClient:setPath(cPath)
 
-        //Adiciona o cabe√ßalho da requisi√ß√£o
+        //Adiciona o cabeÁalho da requisiÁ„o
         aadd(aHeadOut,'Content-Type: application/json')
 
-        //Define o timeout da requisi√ß√£o 120 segundos evitar
+        //Define o timeout da requisiÁ„o 120 segundos evitar
         oRestClient:nTimeOut := 120
 
-        //Faz a requisi√ß√£o GET
+        //Faz a requisiÁ„o GET
         lRet := oRestClient:GET(aHeadOut)
         cRetorno := oRestClient:GetResult()
         oRet := oRestClient:ORESPONSEH
@@ -59,7 +59,7 @@ User Function consUSD(dDataConsulta as date) as numeric
         oRetorno :=  JsonObject():New()
         ret := oRetorno:FromJson(cRetorno)
 
-        //Se o retorno for um objeto e tiver a propriedade value, pega o valor da cota√ß√£o
+        //Se o retorno for um objeto e tiver a propriedade value, pega o valor da cotaÁ„o
         If ValType(oRetorno) == 'J'
             If ValType(oRetorno["value"]) == 'A' .AND. len(oRetorno["value"]) > 0
                 nValor := oRetorno["value"][1]['cotacaoCompra']
@@ -67,14 +67,14 @@ User Function consUSD(dDataConsulta as date) as numeric
             EndIf
         EndIF
 
-        //se chegou at√© aqui √© porque n√£o encontrou a cota√ß√£o, ent√£o incrementa o contador que ser√° utilizado para diminuir da data de.
+        //se chegou atÈ aqui È porque n„o encontrou a cotaÁ„o, ent„o incrementa o contador que ser√° utilizado para diminuir da data de.
         nQuantidadeDias := nQuantidadeDias+1
     EndDo
 Return nValor
 
 /*/{Protheus.doc} trataDataParaConsulta
-fun√ß√£o realiza o tratamento da data padr√£o do protheus para o formato
-aceito na requisi√ß√£o da API do BACEN para consulta da cota√ß√£o do d√≥lar.
+funÁ„o realiza o tratamento da data padr„o do protheus para o formato
+aceito na requisiÁ„o da API do BACEN para consulta da cotaÁ„o do dolar.
 data aceita : MM-DD-YYYY
 @type function
 @version 1.0
@@ -92,12 +92,12 @@ Static Function trataDataParaConsulta(dDataConsulta as date) as character
 Return cDataTratada
 
 /*/{Protheus.doc} testaFuncaoconsUSD
-Fun√ß√£o para testar a fun√ß√£o consUSD que realiza a consulta da cota√ß√£o do d√≥lar na API do BACEN
+FunÁ„o para testar a funÁ„o consUSD que realiza a consulta da cotaÁ„o do dolar na API do BACEN
 @type function
 @version  1.0
 @author felipe.moreira
 @since 4/6/2024
-@return numeric, valor da cota√ß√£o do d√≥lar
+@return numeric, valor da cotaÁ„o do dolar
 /*/
 User Function testaFuncaoConsUSD(dDataConsulta as date) as numeric
 
@@ -108,7 +108,7 @@ User Function testaFuncaoConsUSD(dDataConsulta as date) as numeric
 
     nValor := U_consUSD(dDataConsulta)
 
-    MsgInfo('Valor do Dolar para a data passada √©: '+ str(nValor),"Resultado Teste Fun√ß√£o consUSD")
+    MsgInfo(OemToAnsi('Valor do Dolar para a data passada È: ')+ str(nValor),OemToAnsi("Resultado Teste FunÁ„o consUSD"))
 
     RESET ENVIRONMENT
 Return nValor

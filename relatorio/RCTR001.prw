@@ -3,16 +3,13 @@
 #Include 'tbiconn.ch'
 #Include 'APWizard.ch'
 
-User Function fTstRel()
-
-    RPCSetType(3)
-    PREPARE ENVIRONMENT EMPRESA "99" FILIAL "01"
-
-    U_RCTR001()
-
-    RESET ENVIRONMENT
-Return
-
+/*/{Protheus.doc} RCTR001
+Função que utiliza a classe TReport para criar um relatório de contratos
+@type function
+@version  1.0
+@author felipe.moreira
+@since 11/4/2024
+/*/
 User Function RCTR001()
 
     //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -35,38 +32,49 @@ Static Function ReportDef()
     Local oReport
     Local oSectCab// Sessao Cabecalho
     Local oSectAssoc// Sessao Associados
+    Local oSectProd// Sessao Produtos
 
     Local nTamData	:= 20
 
     oReport := TReport():New("RCTR001",OemToAnsi("Contratos Duofy"),"RCTR001",{|oReport| RCTRImp(oReport)},"Imprime relatorio de contratos")
 
+    oReport:SetLineHeight(30)
     //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
     //³ Cabecalho do contrato                              ³
     //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-    oSectCab := TRSection():New(oReport,OemToAnsi("Cabaçalho do Contrato"),{"Z01"})
+    oSectCab := TRSection():New(oReport,OemToAnsi("Dados do Contrato"),{"Z01"})
+    oSectCab:lHeaderVisible := .T.
 
-    TRCell():New(oSectCab, "Z01_CODCTR", "Z01", OemToAnsi("Contrato")    , , 10, , {||Alltrim(QRYZ01->Z01_CODCTR)})
-    TRCell():New(oSectCab, "Z01_CODCLI", "Z01", OemToAnsi("Cliente")     , , 10, , {||Alltrim(QRYZ01->Z01_CODCLI)})
-    TRCell():New(oSectCab, "Z01_LOJA"  , "Z01", OemToAnsi("Loja")        , , 10, , {||Alltrim(QRYZ01->Z01_LOJA)})
-    TRCell():New(oSectCab, "Z01_NOME"  , "Z01", OemToAnsi("Nome")        , , 30, , {||Alltrim(QRYZ01->Z01_NOME)})
-    TRCell():New(oSectCab, "Z01_DTCAD" , "Z01", OemToAnsi("Dt.Cadastro") , , 10, , {||Alltrim(STOD(QRYZ01->Z01_DTCAD))})
-    TRCell():New(oSectCab, "Z01_DTATIV", "Z01", OemToAnsi("Dt.Ativação") , , 10, , {|| Alltrim(STOD(QRYZ01->Z01_DTATIV))})
-    TRCell():New(oSectCab, "Z01_QTDPAR", "Z01", OemToAnsi("Qtd.Parcelas"), , 10, , {|| Alltrim(Str(QRYZ01->Z01_QTDPAR))})
-    TRCell():New(oSectCab, "Z01_DTVENC", "Z01", OemToAnsi("Dia Venc.")   , , 10, , {|| Alltrim(QRYZ01->Z01_DTVENC)})
-    TRCell():New(oSectCab, "Z01_STATUS", "Z01", OemToAnsi("Status")      , , 10, , {|| Alltrim(QRYZ01->Z01_STATUS)})
-    TRCell():New(oSectCab, "Z01_VALOR" , "Z01", OemToAnsi("Valor")       ,"@E 999,999,999.99" , 14, , {|| QRYZ01->Z01_VALOR})
-    TRCell():New(oSectCab, "Z01_VALOR2", "Z01", OemToAnsi("Valor USD")   ,"@E 999,999,999.99" , 14, , {|| QRYZ01->Z01_VALOR2},)
+    TRCell():New(oSectCab, "Z01_CODCTR", "Z01", OemToAnsi("Contrato")    ,                    , 10, , {|| Alltrim(QRYZ01->Z01_CODCTR)})
+    TRCell():New(oSectCab, "Z01_CODCLI", "Z01", OemToAnsi("Cliente")     ,                    , 10, , {|| Alltrim(QRYZ01->Z01_CODCLI)})
+    TRCell():New(oSectCab, "Z01_LOJA"  , "Z01", OemToAnsi("Loja")        ,                    , 10, , {|| Alltrim(QRYZ01->Z01_LOJA)})
+    TRCell():New(oSectCab, "Z01_NOME"  , "Z01", OemToAnsi("Nome")        ,                    , 30, , {|| AllTrim((QRYZ01->Z01_NOME))})
+    TRCell():New(oSectCab, "Z01_DTCAD" , "Z01", OemToAnsi("Dt.Cadastro") ,                    , 10, , {|| DTOC(QRYZ01->Z01_DTCAD)})
+    TRCell():New(oSectCab, "Z01_DTATIV", "Z01", OemToAnsi("Dt.Ativação") ,                    , 10, , {|| DTOC(QRYZ01->Z01_DTATIV)})
+    TRCell():New(oSectCab, "Z01_QTDPAR", "Z01", OemToAnsi("Qtd.Parcelas"),                    , 10, , {|| Alltrim(Str(QRYZ01->Z01_QTDPAR))})
+    TRCell():New(oSectCab, "Z01_DTVENC", "Z01", OemToAnsi("Dia Venc.")   ,                    , 10, , {|| Alltrim(QRYZ01->Z01_DTVENC)})
+    TRCell():New(oSectCab, "Z01_STATUS", "Z01", OemToAnsi("Status")      ,                    , 10, , {|| Alltrim(QRYZ01->Z01_STATUS)})
+    TRCell():New(oSectCab, "Z01_VALOR" , "Z01", OemToAnsi("Valor")       , "@E 999,999,999.99", 14, , {|| QRYZ01->Z01_VALOR})
+    TRCell():New(oSectCab, "Z01_VALOR2", "Z01", OemToAnsi("Valor USD")   , "@E 999,999,999.99", 14, , {|| QRYZ01->Z01_VALOR2})
 
-    //oSectCab:Cell("Z01_NOME"):SetCellBreak()
-    //oSectCab:Cell("Z01_NOME"):SetLineBreak()
-
+    
     //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
     //³ Associados                                         ³
     //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
     oSectAssoc                := TRSection():New(oSectCab  , OemToAnsi("Associados"))
     oSectAssoc:lHeaderVisible := .T.
     TRCell():New(oSectAssoc, "Z02_NOME"             , "Z02", OemToAnsi("Nome Associado"), , TamSx3("Z02_NOME")[1]+15, , {||Alltrim(QRYZ02->Z02_NOME)})
-    TRCell():New(oSectAssoc, "Z02_DTNASC"           , "Z02", OemToAnsi("Dt.Nascimento") , , nTamData+15             , , {||Alltrim(DTOC(QRYZ02->Z02_DTNASC))})
+    TRCell():New(oSectAssoc, "Z02_DTNASC"           , "Z02", OemToAnsi("Dt.Nascimento") , , nTamData+15             , , {||DTOC(QRYZ02->Z02_DTNASC)})
+    
+    //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+    //³ Produtos                                      ³
+    //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+    oSectProd                := TRSection():New(oSectCab  , OemToAnsi("Produtos"))
+    oSectProd:lHeaderVisible := .T.
+    TRCell():New(oSectProd, "Z03_PRODUT", "Z03", OemToAnsi("Cód. Produto"),                    , TamSx3("Z02_NOME")[1]+15, , {||Alltrim(QRYZ03->Z03_PRODUT)})
+    TRCell():New(oSectProd, "Z03_DESC"  , "Z03", OemToAnsi("Descrição")   ,                    , 30             , , {||Alltrim(QRYZ03->Z03_DESC)})
+    TRCell():New(oSectProd, "Z03_QUANT" , "Z03", OemToAnsi("Quantidade")  , "@E 999,999,999.99", 14                      , , {|| QRYZ03->Z03_QUANT})
+    
 
     oReport:SetPageFooter(3,{||"Pagina: "+Str(oReport:Page()) + "Data: "+Dtoc(Date())+" Hora: "+Time()},.T.)
 
@@ -75,10 +83,12 @@ Return oReport
 Static Function RCTRImp(RCTRImp)
     Local oSectCab   := oReport:Section(1) //Cabecalho do contrato
     Local oSectAssoc := oReport:Section(1):Section(1) //Associados
+    Local oSectProd  := oReport:Section(1):Section(2) //Produtos
     Local lRetrato   := (oReport:GetOrientation() == 1)
 
     oSectCab:SetTitle(Upper(oSectCab:Title())) //Cabecalho do contrato
     oSectAssoc:SetTitle(Upper(oSectAssoc:Title())) //Cabecalho do contrato
+    oSectProd:SetTitle(Upper(oSectProd:Title())) //Cabecalho do contrato
 
     //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
     //³ Configura perguntas do tipo Range                  ³
@@ -92,9 +102,12 @@ Static Function RCTRImp(RCTRImp)
 
     RCTRAsso(oSectAssoc) //-- Associados
 
+    RCTRProd(oSectProd) //-- Produtos
+
     If lRetrato
         oSectCab:SetLineBreak(.T.)
         oSectAssoc:SetLineBreak(.T.)
+        oSectProd:SetLineBreak(.T.)
     EndIf
 
     //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -115,6 +128,11 @@ Static Function RCTRImp(RCTRImp)
         //- Imprime listagem de Aprovadores do contrato
         If oSectAssoc:lEnabled
             oSectAssoc:Print()
+        EndIf
+
+        //- Imprime listagem de Aprovadores do contrato
+        If oSectProd:lEnabled
+            oSectProd:Print()
         EndIf
 
         QRYZ01->(dbSkip())
@@ -183,22 +201,49 @@ Static Function RCTRAsso(oSectAssoc)
 
     BEGIN REPORT QUERY oSectAssoc
         //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-        //³ Gera query de filtro dos contratos                 ³
+        //³ Gera query de filtro dos Associados                ³
         //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
         BeginSql alias "QRYZ02"
             SELECT
                 Z02.Z02_NOME,
-                Z02.Z02_DTNASC
+                Z02.Z02_DTNASC,
+                Z02_ID
             FROM
                 %table:Z02% Z02
             WHERE
-                Z02.Z02_FILIAL = % report_param :QRYZ01->Z01_FILIAL %
-                AND Z02.Z02_CODCTR = % report_param :QRYZ01->Z01_CODCTR %
+                Z02.Z02_FILIAL = %report_param:QRYZ01->Z01_FILIAL%
+                AND Z02.Z02_CODCTR = %report_param:QRYZ01->Z01_CODCTR%
                 AND Z02.%notDel% %exp:cPart%
             ORDER BY
-                Z02_CODCTR
+                Z02_ID
         EndSql
     END REPORT QUERY oSectAssoc
 
 
+Return
+
+Static Function RCTRProd(oSectProd)
+
+    Local cPart	:= "%"
+
+    BEGIN REPORT QUERY oSectProd
+        //ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+        //³ Gera query de filtro dos Produtos                  ³
+        //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+        BeginSql alias "QRYZ03"
+            SELECT
+                Z03_PRODUT,
+                Z03_DESC,
+                Z03_QUANT,
+                Z03_ID
+            FROM
+                %table:Z03% Z03
+            WHERE
+                Z03.Z03_FILIAL = %report_param:QRYZ01->Z01_FILIAL%
+                AND Z03.Z03_CODCTR = %report_param:QRYZ01->Z01_CODCTR%
+                AND Z03.%notDel% %exp:cPart%
+            ORDER BY
+                Z03_ID
+        EndSql
+    END REPORT QUERY oSectProd
 Return
